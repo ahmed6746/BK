@@ -108,101 +108,107 @@
   </div>
 
   <!-- مكتبة Excel -->
- 
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-<script>
-  const projects = [];
-  const tableBody = document.querySelector("#projectsTable tbody");
-  const scriptURL = "https://script.google.com/macros/s/AKfycbyEv7TCMalozwTm6YJBjQlmhmYrEV1duCeWfbxHwtMbew1AcWJNeDDtW8nQ8obHJ6CfcA/exec"; // ← حط هنا رابطك الصحيح
+  <script>
+    const projects = [];
+    const tableBody = document.querySelector("#projectsTable tbody");
 
-  // 🟢 تحميل البيانات من Google Sheets
-  async function loadProjects() {
-    try {
-      const res = await fetch(scriptURL);
-      const data = await res.json();
-      projects.length = 0;
-      data.forEach(p => projects.push(p));
-      updateTable();
-    } catch (err) {
-      console.error("خطأ في تحميل البيانات:", err);
-    }
-  }
+    // 🔗 رابط Google Apps Script
+    const scriptURL = "https://script.google.commacrossAKfycbw59QPRXVYYm0m8h_Q17WltNZWLbIn-7IaNLWGk7SRePKo__yr45EzGsmuyq1f6LxspOgexec";
 
-  // 🟢 إضافة مشروع جديد
-  async function addProject() {
-    const name = document.getElementById("name").value.trim();
-    const number = document.getElementById("number").value.trim();
-    const location = document.getElementById("location").value.trim();
-    const area = document.getElementById("area").value.trim();
-    const desc = document.getElementById("desc").value.trim();
+    // ✅ تحميل البيانات عند الفتح
+    window.addEventListener("load", async () => {
+      try {
+        const res = await fetch(scriptURL);
+        const data = await res.json();
+        data.forEach(p => projects.push(p));
+        updateTable();
+      } catch (err) {
+        console.error("خطأ أثناء تحميل البيانات:", err);
+      }
+    });
 
-    if (!name || !number) {
-      alert("من فضلك أدخل اسم المشروع ورقمه على الأقل");
-      return;
-    }
+    // ➕ إضافة مشروع جديد
+    document.getElementById("addBtn").addEventListener("click", async () => {
+      const name = document.getElementById("name").value.trim();
+      const number = document.getElementById("number").value.trim();
+      const location = document.getElementById("location").value.trim();
+      const area = document.getElementById("area").value.trim();
+      const desc = document.getElementById("desc").value.trim();
 
-    const project = { الاسم: name, الرقم: number, الموقع: location, المساحة: area, الوصف: desc };
+      if (!name || !number) {
+        alert("من فضلك أدخل اسم المشروع ورقمه على الأقل");
+        return;
+      }
 
-    try {
-      const res = await fetch(scriptURL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(project)
-      });
+      const project = { الاسم: name, الرقم: number, الموقع: location, المساحة: area, الوصف: desc };
 
-      if (res.ok) {
-        alert("✅ تم حفظ المشروع بنجاح");
+      try {
+        await fetch(scriptURL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(project)
+        });
+
         projects.push(project);
         updateTable();
-        clearInputs();
-      } else {
-        alert("⚠️ حدث خطأ أثناء الحفظ (تحقق من صلاحيات Google Apps Script)");
+        alert("✅ تم حفظ المشروع بنجاح!");
+
+        // مسح الحقول
+        document.getElementById("name").value = "";
+        document.getElementById("number").value = "";
+        document.getElementById("location").value = "";
+        document.getElementById("area").value = "";
+        document.getElementById("desc").value = "";
+
+      } catch (err) {
+        alert("❌ حدث خطأ أثناء الاتصال بالسكربت.");
+        console.error(err);
       }
-    } catch (err) {
-      console.error("خطأ في الإرسال:", err);
-      alert("حدث خطأ أثناء الاتصال بالسكربت.");
-    }
-  }
-
-  // 🔁 تحديث الجدول
-  function updateTable() {
-    tableBody.innerHTML = "";
-    projects.forEach((p, i) => {
-      const row = `
-        <tr>
-          <td>${i + 1}</td>
-          <td>${p.الاسم}</td>
-          <td>${p.الرقم}</td>
-          <td>${p.الموقع}</td>
-          <td>${p.المساحة}</td>
-          <td>${p.الوصف}</td>
-        </tr>`;
-      tableBody.insertAdjacentHTML("beforeend", row);
     });
-  }
 
-  // 🧹 تنظيف الحقول
-  function clearInputs() {
-    ["name", "number", "location", "area", "desc"].forEach(id => document.getElementById(id).value = "");
-  }
-
-  // 📦 تصدير Excel
-  document.getElementById("exportBtn").addEventListener("click", () => {
-    if (projects.length === 0) {
-      alert("لا توجد مشاريع لتصديرها.");
-      return;
+    // 📋 تحديث الجدول
+    function updateTable() {
+      tableBody.innerHTML = "";
+      projects.forEach((p, i) => {
+        const row = `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${p.الاسم}</td>
+            <td>${p.الرقم}</td>
+            <td>${p.الموقع}</td>
+            <td>${p.المساحة}</td>
+            <td>${p.الوصف}</td>
+          </tr>`;
+        tableBody.insertAdjacentHTML("beforeend", row);
+      });
     }
-    const ws = XLSX.utils.json_to_sheet(projects);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "المشاريع");
-    XLSX.writeFile(wb, "المشاريع.xlsx");
-  });
 
-  // 🖱️ زر الإضافة
-  document.getElementById("addBtn").addEventListener("click", addProject);
+    // 📤 تصدير إلى Excel
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      if (projects.length === 0) {
+        alert("لا توجد مشاريع لتصديرها.");
+        return;
+      }
 
-  // ⏬ تحميل البيانات عند فتح الصفحة
-  window.onload = loadProjects;
-</script>
+      const ws = XLSX.utils.json_to_sheet(projects);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "المشاريع");
 
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([wbout], { type: "application/octet-stream" });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "المشاريع.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>
